@@ -129,20 +129,36 @@ st.write("Upload product images to check quality (OK/NOK)")
 #         model = train_cnn_model(base_data_dir)
 #     else:
 #         st.error("Please ensure the OK and NOK directories exist within the provided base directory path.")
-# Input for directory path using text input
-base_data_dir = st.text_input("Enter the base directory path")
+# # Input for directory path using text input
+# base_data_dir = st.text_input("Enter the base directory path")
+ok_dir = st.file_uploader("Upload OK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
+nok_dir = st.file_uploader("Upload NOK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
 
-# Check if directories are valid
-ok_dir = os.path.join(base_data_dir, "OK")
-nok_dir = os.path.join(base_data_dir, "NOK")
 
-# Button to train a new model
 if st.button("Train New Model"):
-    if os.path.exists(ok_dir) and os.path.exists(nok_dir):
-        st.write(f"Using data from: {base_data_dir}")
+    if uploaded_ok_files and uploaded_nok_files:
+        # Create temporary directories to save uploaded files
+        base_data_dir = "temp_training_data"
+        ok_dir = os.path.join(base_data_dir, "OK")
+        nok_dir = os.path.join(base_data_dir, "NOK")
+
+        os.makedirs(ok_dir, exist_ok=True)
+        os.makedirs(nok_dir, exist_ok=True)
+
+        # Save uploaded OK images
+        for file in uploaded_ok_files:
+            with open(os.path.join(ok_dir, file.name), "wb") as f:
+                f.write(file.getbuffer())
+
+        # Save uploaded NOK images
+        for file in uploaded_nok_files:
+            with open(os.path.join(nok_dir, file.name), "wb") as f:
+                f.write(file.getbuffer())
+
+        st.write(f"Training with data from: {base_data_dir}")
         model = train_cnn_model(base_data_dir)
     else:
-        st.error("Please ensure the OK and NOK directories exist within the provided base directory path.")
+        st.error("Please upload both OK and NOK images.")
 
 # Uploading an existing model
 model = select_model()
