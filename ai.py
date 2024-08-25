@@ -17,6 +17,7 @@ UPLOADS_DIR = "uploads"
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
+# Custom callback to update training progress
 class StreamlitProgressCallback(Callback):
     def __init__(self, progress_bar, status_text, start_time):
         self.progress_bar = progress_bar
@@ -35,7 +36,6 @@ class StreamlitProgressCallback(Callback):
             st.write(f"Epoch {epoch + 1}/{self.params['epochs']} - "
                      f"loss: {logs['loss']:.4f} - accuracy: {logs['accuracy']:.4f} - "
                      f"ETA: {remaining_time:.2f} seconds", unsafe_allow_html=True)
-
 
 # Function to train a new CNN model
 def train_cnn_model(data_dir):
@@ -114,13 +114,13 @@ def predict_quality(model, image_path):
     prediction = model.predict(image)
     return "OK" if prediction[0][0] > 0.5 else "NOK"
 
+
 # Streamlit UI
 st.title("Product Quality Checker")
 st.write("Upload product images to check quality (OK/NOK)")
 
-ok_dir = st.file_uploader("Upload OK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
-nok_dir = st.file_uploader("Upload NOK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
-
+uploaded_ok_files = st.file_uploader("Upload OK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
+uploaded_nok_files = st.file_uploader("Upload NOK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
 
 if st.button("Train New Model"):
     if uploaded_ok_files and uploaded_nok_files:
@@ -157,8 +157,9 @@ if uploaded_image and model:
     image_path = os.path.join(UPLOADS_DIR, uploaded_image.name)
     with open(image_path, "wb") as f:
         f.write(uploaded_image.getbuffer())
-    prediction = predict_quality(model, image_path)
-    st.write(f"The quality of the product is: {prediction}")
+    with st.spinner("Making prediction..."):
+        prediction = predict_quality(model, image_path)
+        st.write(f"The quality of the product is: {prediction}")
 
 # Option to use the camera for live prediction
 use_camera = st.checkbox("Use Camera for Live Prediction")
