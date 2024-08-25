@@ -10,7 +10,7 @@ import cv2
 
 # Constants
 IMG_SIZE = (512, 512)
-MODEL_DIR = "models"
+MODEL_DIR = "https://drive.google.com/drive/folders/1AP4-wk7zf7ojP5uFUDF2S7aVH2oQCXwr?usp=sharing"
 UPLOADS_DIR = "uploads"
 
 # Ensure necessary directories exist
@@ -88,8 +88,16 @@ def train_cnn_model(data_dir):
     return model
 
 # Function to load an existing model
+
+from google.colab import drive
+
 def load_existing_model(model_path):
     try:
+        # Mount Google Drive
+        drive.mount('/content/gdrive')
+        
+        # Load model from Google Drive
+        model_path = f'/content/gdrive/MyDrive/{model_path}'
         model = tf.keras.models.load_model(model_path)
         st.write("Loaded model from:", model_path)
         return model
@@ -97,8 +105,14 @@ def load_existing_model(model_path):
         st.error(f"Failed to load model. Error: {e}")
         return None
 
+
+
 # Function to list and select a model from the models directory
 def select_model():
+    # Mount Google Drive
+    drive.mount('/content/gdrive')
+    
+    # List model files in Google Drive
     model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith('.h5')]
     selected_model = st.selectbox("Select a model to load:", model_files)
     if selected_model:
