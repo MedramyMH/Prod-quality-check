@@ -32,7 +32,7 @@ class StreamlitProgressCallback(Callback):
             remaining_time = time_per_epoch * remaining_epochs
 
             self.progress_bar.progress((epoch + 1) / self.params['epochs'])
-            self.status_text.write(f"Epoch {epoch + 1}/{self.params['epochs']} - "
+            self.status_text.text(f"Epoch {epoch + 1}/{self.params['epochs']} - "
                                    f"loss: {logs['loss']:.4f} - accuracy: {logs['accuracy']:.4f} - "
                                    f"ETA: {remaining_time:.2f} seconds")
 
