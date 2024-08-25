@@ -10,16 +10,17 @@ import cv2
 
 # Constants
 IMG_SIZE = (512, 512)
-MODEL_DIR = "https://drive.google.com/drive/folders/1AP4-wk7zf7ojP5uFUDF2S7aVH2oQCXwr?usp=sharing"
 UPLOADS_DIR = "uploads"
+BASE_DATA_DIR = "temp_training_data"
 
 # Ensure necessary directories exist
-os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+os.makedirs(BASE_DATA_DIR, exist_ok=True)
 
 # Custom callback to update training progress
 class StreamlitProgressCallback(Callback):
     def __init__(self, progress_bar, status_text, start_time):
+        super().__init__()
         self.progress_bar = progress_bar
         self.status_text = status_text
         self.start_time = start_time
@@ -35,11 +36,12 @@ class StreamlitProgressCallback(Callback):
             self.progress_bar.progress(progress_value)
             st.write(f"Epoch {epoch + 1}/{self.params['epochs']} - "
                      f"loss: {logs['loss']:.4f} - accuracy: {logs['accuracy']:.4f} - "
-                     f"ETA: {remaining_time:.2f} seconds", unsafe_allow_html=True)
+                     f"ETA: {remaining_time:.2f} seconds")
 
 # Function to train a new CNN model
 def train_cnn_model(data_dir):
     st.write("Training a new CNN model...")
+    
     # Data generators for training and validation
     train_datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
     train_generator = train_datagen.flow_from_directory(
@@ -81,23 +83,15 @@ def train_cnn_model(data_dir):
 
     model.fit(train_generator, epochs=10, validation_data=validation_generator, callbacks=[progress_callback])
     
-    # Save the trained model
-    model_path = os.path.join(MODEL_DIR, 'product_quality_model.h5')
+    # Save the trained model locally
+    model_path = os.path.join(BASE_DATA_DIR, 'product_quality_model.h5')
     model.save(model_path)
     st.write("Model training completed and saved at:", model_path)
     return model
 
-# Function to load an existing model
-
-from google.colab import drive
-
+# Function to load an existing model from Google Drive in Colab
 def load_existing_model(model_path):
     try:
-        # Mount Google Drive
-        drive.mount('/content/gdrive')
-        
-        # Load model from Google Drive
-        model_path = f'/content/gdrive/MyDrive/{model_path}'
         model = tf.keras.models.load_model(model_path)
         st.write("Loaded model from:", model_path)
         return model
@@ -105,18 +99,12 @@ def load_existing_model(model_path):
         st.error(f"Failed to load model. Error: {e}")
         return None
 
-
-
 # Function to list and select a model from the models directory
 def select_model():
-    # Mount Google Drive
-    drive.mount('/content/gdrive')
-    
-    # List model files in Google Drive
-    model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith('.h5')]
+    model_files = [f for f in os.listdir(BASE_DATA_DIR) if f.endswith('.h5')]
     selected_model = st.selectbox("Select a model to load:", model_files)
     if selected_model:
-        model_path = os.path.join(MODEL_DIR, selected_model)
+        model_path = os.path.join(BASE_DATA_DIR, selected_model)
         return load_existing_model(model_path)
     return None
 
@@ -128,7 +116,6 @@ def predict_quality(model, image_path):
     prediction = model.predict(image)
     return "OK" if prediction[0][0] > 0.5 else "NOK"
 
-
 # Streamlit UI
 st.title("Product Quality Checker")
 st.write("Upload product images to check quality (OK/NOK)")
@@ -138,10 +125,8 @@ uploaded_nok_files = st.file_uploader("Upload NOK Images", accept_multiple_files
 
 if st.button("Train New Model"):
     if uploaded_ok_files and uploaded_nok_files:
-        # Create temporary directories to save uploaded files
-        base_data_dir = "temp_training_data"
-        ok_dir = os.path.join(base_data_dir, "OK")
-        nok_dir = os.path.join(base_data_dir, "NOK")
+        ok_dir = os.path.join(BASE_DATA_DIR, "OK")
+        nok_dir = os.path.join(BASE_DATA_DIR, "NOK")
 
         os.makedirs(ok_dir, exist_ok=True)
         os.makedirs(nok_dir, exist_ok=True)
@@ -156,13 +141,13 @@ if st.button("Train New Model"):
             with open(os.path.join(nok_dir, file.name), "wb") as f:
                 f.write(file.getbuffer())
 
-        st.write(f"Training with data from: {base_data_dir}")
+        st.write(f"Training with data from: {BASE_DATA_DIR}")
         with st.spinner("Training model..."):
-            model = train_cnn_model(base_data_dir)
+            model = train_cnn_model(BASE_DATA_DIR)
     else:
         st.error("Please upload both OK and NOK images.")
 
-# Uploading an existing model
+# Load an existing model
 model = select_model()
 
 # Uploading a new image for prediction
@@ -180,7 +165,6 @@ use_camera = st.checkbox("Use Camera for Live Prediction")
 if use_camera and model:
     st.write("Using camera to capture product image...")
     with st.spinner("Capturing image..."):
-        # Capture image using webcam
         cap = cv2.VideoCapture(0)
         if cap.isOpened():
             ret, frame = cap.read()
