@@ -117,23 +117,8 @@ def predict_quality(model, image_path):
 st.title("Product Quality Checker")
 st.write("Upload product images to check quality (OK/NOK)")
 
-# # Input for directory path
-# base_data_dir = st.text_input("Enter the base directory path")
-# ok_dir = os.path.join(base_data_dir, "OK")
-# nok_dir = os.path.join(base_data_dir, "NOK")
-
-# # Button to train a new model
-# if st.button("Train New Model"):
-#     if os.path.exists(ok_dir) and os.path.exists(nok_dir):
-#         st.write(f"Using data from: {base_data_dir}")
-#         model = train_cnn_model(base_data_dir)
-#     else:
-#         st.error("Please ensure the OK and NOK directories exist within the provided base directory path.")
-# # Input for directory path using text input
-# base_data_dir = st.text_input("Enter the base directory path")
-ok_dir = st.file_uploader("Upload OK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
-nok_dir = st.file_uploader("Upload NOK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
-
+uploaded_ok_files = st.file_uploader("Upload OK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
+uploaded_nok_files = st.file_uploader("Upload NOK Images", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
 
 if st.button("Train New Model"):
     if uploaded_ok_files and uploaded_nok_files:
